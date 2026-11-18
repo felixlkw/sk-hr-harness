@@ -4,7 +4,7 @@ mySUNI 「AI Powered Workforce Planning」 과정 Day 3 (New3강 「내가 필�
 
 | 폴더 | 내용 |
 |---|---|
-| `pwc-hr-harness/` | 플러그인 새 판 (0.13.3) · 인력계획 기본 팀 + 새 하네스 만들기 (`harness`) · 하네스 개선 (`evolve`) · 자사 파일 정리 Agent 틀 · 한 장 정리 |
+| `pwc-hr-harness/` | 플러그인 새 판 (0.13.4) · 인력계획 기본 팀 + 새 하네스 만들기 (`harness`) · 하네스 개선 (`evolve`) · 자사 파일 정리 Agent 틀 · 한 장 정리 |
 | `교안/` | New3강 교안 PDF (36장) · 실습 예시 자료 (`HR_harness_mock_files/` · 모두 가상) · 자료 쓰는 법은 [`교안/README.md`](교안/README.md) |
 
 ## 오늘 하루
@@ -33,9 +33,9 @@ Day 1 에 교육장 PC `C:\PwC\pwc-hr-harness` 폴더로 플러그인을 설치�
    claude plugin update pwc-hr-harness@pwc-hr-marketplace
    ```
 
-   `updated … 0.13.3 … Restart to apply changes.` 가 나오면 맞음
+   `updated … 0.13.4 … Restart to apply changes.` 가 나오면 맞음
 5. **다시 시작:** Claude Desktop 을 완전히 끄고 다시 켬 → 새 세션
-6. **확인:** 플러그인 목록 (또는 terminal 패널 `claude plugin list`) 에서 `pwc-hr-harness … 0.13.3`
+6. **확인:** 플러그인 목록 (또는 terminal 패널 `claude plugin list`) 에서 `pwc-hr-harness … 0.13.4`
 
 ### 막히면
 

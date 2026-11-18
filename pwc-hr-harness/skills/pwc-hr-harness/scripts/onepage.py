@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""한 장 정리 (모드 G · New3강 마무리 · 0.13.3) · 「지금까지 한 내용을 한 장으로 정리해 줘」.
+"""한 장 정리 (모드 G · New3강 마무리 · 0.13.4) · 「지금까지 한 내용을 한 장으로 정리해 줘」.
 
 python -X utf8 onepage.py collect [--root C:\\PwC] [--dir <하네스 폴더> ...] [--since YYYY-MM-DD] [--name 이름]
     → 오늘 (또는 --since 이후) 만들거나 바꾼 하네스 폴더를 찾아 사실만 JSON 으로 출력 (계산 · 판단 없음 · 결정적)
@@ -364,7 +364,8 @@ def render(a):
                     pick += [os.path.join(base, f) for f in files if f != 'settings.local.json' and not f.endswith(('.pyc', '.xlsx', '.docx'))]
             for p in sorted(set(pick)):
                 z.write(p, os.path.join(h['폴더'], os.path.relpath(p, d)))
-    print(json.dumps(dict(status='완료', html=hp, zip=zp, 하네스=[h['폴더'] for h in F['하네스']]), ensure_ascii=False, indent=1))
+    print(json.dumps(dict(status='완료', html=hp, zip=zp, 하네스=[h['폴더'] for h in F['하네스']],
+                     제출=f'html 하나만 kangouk.lee@pwc.com 으로 메일 첨부 · 제목 [New3강] 한장정리_{F["이름"]} · zip 은 보내지 않음'), ensure_ascii=False, indent=1))
 
 
 if __name__ == '__main__':
