@@ -1,0 +1,30 @@
+# pwc-hr-harness · 내 하네스 폴더를 Git (비공개 저장소)으로 가져갈 때 올리지 않는 것
+# /hr-init 이 작업 폴더에 .gitignore 가 없을 때 이 견본을 깐다 (있으면 그대로 둠)
+# 올리는 것: CLAUDE.md · .claude/ (개정본) · 양식/ · 가상 데이터 data/<회사>/ · outputs/ · hr-viewer.html
+# 저장소 = 내 hr-agent (Day 1 첫 푸시 · 매일 저장) · 플러그인 사본 pwc-hr-harness/ 는 Day 3 가져가기 때 copy-plugin 으로 넣어 함께 올림
+
+# 1. 실데이터 자리 (회사 실데이터는 이 이름 규칙으로만 둔다 · 저장소에 올라가지 않음)
+#    - 회사 폴더 이름 끝을 「_실데이터」로: data/자사_실데이터/ → 결과도 outputs/자사_실데이터/ 로 쌓여 함께 빠짐
+#    - 또는 회사 폴더 안 _실데이터/ 하위 폴더
+*_실데이터/
+*_실데이터.*
+data/*/_실데이터/
+outputs/*/_실데이터/
+
+# 2. 엑셀 · 오피스 잠금 파일
+~$*
+
+# 3. 파이썬 캐시
+__pycache__/
+*.pyc
+
+# 4. 운영체제 파일
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 5. 개인 설정 (PC 마다 다름 · 권한 기록)
+.claude/settings.local.json
+
+# 6. 가져가기 zip (take_home.py zip 이 만든 파일)
+*_가져가기_*.zip
