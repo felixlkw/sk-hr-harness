@@ -86,7 +86,9 @@ def change_log(claude_md):
     return rows
 
 
-RULE_RX = re.compile(r'(금지|하지 않|지어내지|확인 필요|승인|CP\d|멈춘|멈추|사람이|개인 식별|개인정보|스크립트만|스크립트가)')
+RULE_RX = re.compile(r'(금지|하지 않(는다|음|고)|않는다|지어내지|확인 필요|승인|CP\d|멈춘|멈추|멈춤|사람이|개인 식별|개인정보|스크립트만|스크립트가)')
+RULE_STRONG = re.compile(r'(금지|지어내지|확인 필요|승인|멈춘|멈추|멈춤|개인 식별|개인정보|원본|사람이|사용자에게|스크립트만|스크립트가)')
+LEAD_RX = re.compile(r'^(그래서|그리고|또한|따라서|즉|단|다만|이때|여기서)[,\s]+')
 
 
 def rules(paths, n=3):
@@ -99,14 +101,12 @@ def rules(paths, n=3):
         for ln in lines:
             if ln.count('|') >= 2 or ln.lstrip().startswith(('Agent(', 'python', '```')):
                 continue
-            s = re.sub(r'^[\s\-*#>|0-9.]+', '', ln).strip()
+            s = LEAD_RX.sub('', re.sub(r'^[\s\-*#>|0-9.=:·]+', '', ln).strip())
             if 12 <= len(s) <= 200 and RULE_RX.search(s) and s not in seen and not s.startswith(('name:', 'description:')):
                 seen.add(s)
                 s = s.replace('**', '').replace('`', '')
-                out.append(s if len(s) <= 80 else s[:78] + '…')
-            if len(out) >= n:
-                return out
-    return out
+                out.append((0 if RULE_STRONG.search(s) else 1, len(out), s if len(s) <= 100 else s[:98] + '…'))
+    return [x for _, _, x in sorted(out)[:n]]
 
 
 def runs(d, since):
@@ -203,20 +203,64 @@ def esc(x):
     return html.escape(str(x or ''))
 
 
+_END = r'(?=$|[\s.,;:)」·…])'
+_EUM_FIX = [('묻는다', '물음'), ('만든다', '만듦'), ('든다', '듦'), ('아니다', '아님'), ('이다', '임')]
+
+
+def _jong(ch, j):
+    c = ord(ch) - 0xAC00
+    return chr(0xAC00 + c - c % 28 + j) if 0 <= c < 11172 else ch
+
+
+def eum(t):
+    """「~한다 · ~이다 · ~있다」 로 끝나는 문장을 음슴체 (~함 · ~임 · ~있음) 로."""
+    t = str(t or '').replace('**', '').replace('`', '').strip()
+    for a, b in _EUM_FIX:
+        t = re.sub(a + _END, b, t)
+    t = re.sub(r'([가-힣])는다' + _END, r'\1음', t)                      # 맡는다 · 않는다 · 넣는다
+    t = re.sub(r'([있없같았었였했겠않])다' + _END, r'\1음', t)            # 있다 · 했다 · 않다
+    t = re.sub(r'([가-힣])다' + _END, lambda m: (_jong(m.group(1), 16) if (ord(m.group(1)) - 0xAC00) % 28 == 4 else m.group(0)), t)  # 한다 · 된다 · 쓴다 (받침 ㄴ → ㅁ)
+    return re.sub(r'\.$', '', t)
+
+
 CSS = """
-body{font-family:'Pretendard','Malgun Gothic',sans-serif;color:#2D2926;margin:0;background:#fff}
-.pg{max-width:980px;margin:0 auto;padding:28px 34px}
-h1{font-size:24px;margin:0} .sub{color:#6B645D;font-size:13px;margin:4px 0 14px}
-.one{background:#2D2926;color:#fff;border-radius:10px;padding:10px 16px;font-size:15px;margin-bottom:14px}
-.h{border:1.5px solid #E2DDD7;border-radius:12px;padding:14px 18px;margin-bottom:14px;page-break-inside:avoid}
-.h h2{font-size:18px;margin:0 0 2px;color:#D04A02} .h .g{font-size:13px;color:#6B645D;margin-bottom:10px}
-table{border-collapse:collapse;width:100%;font-size:12.5px} td,th{border-top:1px solid #ECE8E3;padding:5px 8px;vertical-align:top;text-align:left}
-th{width:150px;color:#6B645D;font-weight:700;background:#F7F5F2}
-.chip{display:inline-block;border:1px solid #D7D2CC;border-radius:10px;padding:0 8px;margin:1px 3px 1px 0;font-size:12px}
-.ok{color:#1F7A3D;font-weight:700} .no{color:#9A948D}
-.foot{font-size:11.5px;color:#9A948D;margin-top:8px}
-@media print{.pg{padding:10mm}}
+@page{size:A4;margin:9mm 12mm}
+*{box-sizing:border-box}
+body{font-family:'Malgun Gothic','맑은 고딕','Pretendard','Apple SD Gothic Neo',sans-serif;color:#111;margin:0;background:#E9EBEE;
+     font-size:14px;line-height:1.65;letter-spacing:-0.03em;word-break:keep-all;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg{width:794px;max-width:100%;margin:24px auto;background:#fff;padding:48px 56px 40px;box-shadow:0 1px 6px rgba(0,0,0,.12)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:12px}
+.org{font-size:12.5px;color:#444;letter-spacing:-0.02em;line-height:1.5}
+.sign{border-collapse:collapse;font-size:12px;text-align:center}
+.sign th,.sign td{border:1px solid #333;padding:3px 0;width:68px;letter-spacing:0}
+.sign th{background:#EEF0F3;font-weight:700} .sign td{height:40px}
+.ttl{border-top:3px solid #111;border-bottom:1px solid #111;padding:14px 0 12px;text-align:center;margin-bottom:12px}
+.ttl h1{font-size:23px;font-weight:800;letter-spacing:-0.05em;margin:0}
+.ttl .s{font-size:13px;color:#444;margin-top:3px;letter-spacing:-0.02em}
+.meta{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0 14px}
+.meta th,.meta td{border:1px solid #9AA0A8;padding:5px 10px;text-align:left}
+.meta th{background:#EEF0F3;font-weight:700;width:92px;white-space:nowrap}
+h2{font-size:16.5px;font-weight:800;letter-spacing:-0.04em;margin:16px 0 6px;padding-bottom:3px;border-bottom:1.5px solid #1F3864;color:#1F3864}
+h3{font-size:15px;font-weight:800;letter-spacing:-0.04em;margin:10px 0 4px} h3 small{font-size:12.5px;font-weight:400;color:#555;margin-left:6px;letter-spacing:-0.02em}
+table.t tr,p{page-break-inside:avoid} h2,h3,p.b1{page-break-after:avoid}
+p.b1{margin:6px 0 2px;padding-left:1.25em;text-indent:-1.25em;font-weight:700}
+p.b2{margin:2px 0;padding-left:2.5em;text-indent:-1.25em}
+p.b3{margin:1px 0;padding-left:3.6em;text-indent:-1em;color:#333;font-size:13.5px}
+p.lead{border:1px solid #9AA0A8;background:#F6F7F9;padding:10px 14px;margin:6px 0 4px;font-size:14.5px;font-weight:700;letter-spacing:-0.035em}
+table.t{width:100%;border-collapse:collapse;font-size:13px;line-height:1.45;margin:3px 0 4px}
+table.t th,table.t td{border:1px solid #9AA0A8;padding:4px 8px;vertical-align:top;text-align:left}
+table.t thead th{background:#EEF0F3;font-weight:700;text-align:center;border-top:2px solid #333}
+table.t td.c{text-align:center;white-space:nowrap} table.t th.r{background:#F6F7F9;font-weight:700;width:118px;white-space:nowrap}
+.mk{letter-spacing:0;margin-right:10px;white-space:nowrap}
+.nil{color:#777}
+.ok{font-weight:700}
+.foot{border-top:1px solid #111;margin-top:26px;padding-top:6px;font-size:11.5px;color:#555;line-height:1.55;letter-spacing:-0.02em}
+.end{margin-left:14px;font-weight:700;letter-spacing:0}
+@media print{body{background:#fff;font-size:12.5px;line-height:1.42}.pg{width:auto;margin:0;padding:0;box-shadow:none}.ttl{padding:10px 0 8px}.ttl h1{font-size:20px}.ttl .s{font-size:12px}.meta,table.t{font-size:12px}table.t th,table.t td,.meta th,.meta td{padding:3px 7px}h2{font-size:15px;margin:10px 0 4px}h3{font-size:14px;margin:8px 0 3px}p.b1{margin:5px 0 1px}p.b3{font-size:12px}p.lead{font-size:13px;padding:7px 12px}.org{font-size:11.5px}.top{margin-bottom:8px}.sign td{height:26px}.meta{margin:8px 0 10px}p.b2{margin:1px 0}table.t{line-height:1.38}.foot{font-size:10.5px;margin-top:4px}}
 """
+
+CRIT = ['반복성', '표준화', '정확성', '공유']
+ROMAN = 'ⅠⅡⅢⅣⅤⅥ'
 
 
 def render(a):
@@ -228,36 +272,87 @@ def render(a):
     safe = re.sub(r'[\\/:*?"<>| ]', '_', nm)
     hp = os.path.join(out_dir, f'한장정리_{safe}_{F["날짜"]}.html')
     zp = os.path.join(out_dir, f'하네스사본_{safe}_{F["날짜"]}.zip')
-    body = [f'<div class="pg"><h1>New3강 · 내가 만든 하네스 한 장 정리</h1>'
-            f'<div class="sub">{esc(nm)} · {esc(F["날짜"])} · 하네스 {len(F["하네스"])}개 · 자료 내용 · 개인 정보 없음 (폴더 구성과 기록만)</div>']
+    H = F['하네스']
+    nil = lambda t: f'<span class="nil">{t}</span>'
+    body = ['<div class="pg">'
+            '<div class="top"><div class="org">mySUNI 「AI Powered Workforce Planning」<br>Day 3 · 내가 필요한 HR-Harness 만들기</div>'
+            '<table class="sign"><tr><th>작성</th><th>확인</th></tr><tr><td></td><td></td></tr></table></div>'
+            '<div class="ttl"><h1>내 업무 하네스 구축 현황 리포트</h1><div class="s">New3강 실습 · 한 장 정리</div></div>']
+    sec = 0
+
+    def h2(t):
+        nonlocal sec
+        s = f'<h2>{ROMAN[sec]}. {t}</h2>'
+        sec += 1
+        return s
+    body.append(h2('요약'))
     if S.get('한줄'):
-        body.append(f'<div class="one">{esc(S["한줄"])}</div>')
-    for h in F['하네스']:
+        body.append(f'<p class="lead">{esc(eum(S["한줄"]))}</p>')
+    for h in H:
         sh = (S.get('하네스') or {}).get(h['폴더'], {})
-        crit = ''.join(f'<span class="chip">{esc(c)}</span>' for c in sh.get('선정기준', []))
-        ag = ''.join(f'<span class="chip">{esc(x["이름"])}</span>' for x in h['Agent']) or '<span class="no">없음 (스킬 중심)</span>'
-        sk = ''.join(f'<span class="chip">{esc(x["이름"])}{" · 스크립트 " + str(x["스크립트"]) if x["스크립트"] else ""}</span>' for x in h['스킬']) or '<span class="no">없음</span>'
-        rl = ('표준 팀 규칙 그대로 (CP 5곳 · 감원 단독 금지 · 폴더 밖 자료 금지 · 검증 관문)' if h.get('표준팀') else
-              '<br>'.join(esc(x) for x in h['규칙']) or '<span class="no">문서에서 찾지 못함</span>')
-        log = '<br>'.join(f'{esc(r["날짜"])} · {esc(r["변경"][:90])}' + (f' <span class="no">(사유: {esc(r["사유"][:60])})</span>' if r['사유'] and r['사유'] != '-' else '') for r in h['변경이력']) or '<span class="no">기록 없음</span>'
-        rows = [('주제', esc(sh.get('주제') or h['이름'])), ('선정 기준', crit or '<span class="no">-</span>'),
-                ('구성', f'Agent {len(h["Agent"])} · 스킬 {len(h["스킬"])} · 스크립트 {len(h["스크립트"])}<br>{ag}<br>{sk}'),
-                ('일관성 (계산)', f'<span class="ok">스크립트 {len(h["스크립트"])}개로 계산</span>' if h['스크립트'] else '<span class="no">스크립트 없음 (AI 가 직접 처리)</span>'),
-                ('확인 자리 · 하지 않는 일', rl),
-                ('시험 실행', f'기간 안에 만든 결과 파일 {h["오늘_결과_수"]}개' if h['오늘_결과_수'] else '<span class="no">결과 파일 없음</span>'),
-                ('개선 · 받은 피드백 반영', log)]
+        body.append(f'<p class="b2">○ {esc(h["이름"])} : Agent {len(h["Agent"])}개 · 스킬 {len(h["스킬"])}개 · 스크립트 {len(h["스크립트"])}개로 구성함</p>'
+                    f'<p class="b3">- 시험 실행 결과 파일 {h["오늘_결과_수"]}개 · 개선 이력 {len(h["변경이력"])}건</p>')
+    body.append(h2('하네스별 구축 현황'))
+    for i, h in enumerate(H, 1):
+        sh = (S.get('하네스') or {}).get(h['폴더'], {})
+        got = set(sh.get('선정기준', []))
+        crit = ''.join(f'<span class="mk">{"■" if c in got else "□"} {c}</span>' for c in CRIT)
+        b = [f'<div class="blk"><h3>{i}. {esc(h["이름"])}<small>(폴더 {esc(h["폴더"])})</small></h3>',
+             '<p class="b1">□ 개요</p><table class="t">',
+             f'<tr><th class="r">업무 주제</th><td>{esc(eum(sh.get("주제") or h["이름"]))}</td></tr>']
+        if h['목표'] and not sh.get('주제'):
+            b.append(f'<tr><th class="r">목표</th><td>{esc(eum(h["목표"]))}</td></tr>')
+        b.append(f'<tr><th class="r">선정 기준</th><td>{crit} <span class="nil">(해당 {len(got & set(CRIT))} / 4)</span></td></tr>'
+                 '</table></div>')
+        ag = ', '.join(esc(x['이름']) for x in h['Agent'])
+        sk = ', '.join(esc(x['이름']) + (f' (스크립트 {x["스크립트"]})' if x['스크립트'] else '') for x in h['스킬'])
+        sc = ', '.join(esc(os.path.basename(x)) for x in h['스크립트'])
+        b.append('<div class="blk"><p class="b1">□ 구성</p><table class="t"><thead><tr><th style="width:118px">구분</th><th style="width:60px">수</th><th>명칭</th></tr></thead>'
+                 f'<tr><th class="r">Agent (역할)</th><td class="c">{len(h["Agent"])}</td><td>{ag or nil("없음 (스킬 중심 구성)")}</td></tr>'
+                 f'<tr><th class="r">스킬 (방법)</th><td class="c">{len(h["스킬"])}</td><td>{sk or nil("없음")}</td></tr>'
+                 f'<tr><th class="r">스크립트 (계산)</th><td class="c">{len(h["스크립트"])}</td><td>{sc or nil("없음 (AI 가 직접 처리)")}</td></tr></table></div>')
+        b.append('<div class="blk"><p class="b1">□ 운영 통제 (사람 확인 자리 · 하지 않는 일)</p>')
+        if h.get('표준팀'):
+            b.append('<p class="b2">○ 표준 팀 규칙을 그대로 적용함 (CP 5곳 · 감원 단독 대안 금지 · 폴더 밖 자료 금지 · 검증 관문)</p>')
+        elif h['규칙']:
+            b += [f'<p class="b2">○ {esc(eum(x))}</p>' for x in h['규칙']]
+        else:
+            b.append(f'<p class="b2">○ {nil("문서에서 확인되지 않음")}</p>')
+        b.append('</div><div class="blk"><p class="b1">□ 시험 실행</p>')
+        if h['오늘_결과_수']:
+            b.append(f'<p class="b2">○ 시험 실행으로 결과 파일 {h["오늘_결과_수"]}개가 생성됨</p>'
+                     f'<p class="b3">- {", ".join(esc(x) for x in h["오늘_결과"][:4])}'
+                     + (f' 외 {h["오늘_결과_수"] - 4}개' if h['오늘_결과_수'] > 4 else '') + '</p>')
+        else:
+            b.append(f'<p class="b2">○ {nil("결과 파일 없음")}</p>')
+        b.append('</div><div class="blk"><p class="b1">□ 개선 이력 (CLAUDE.md 변경 이력)</p>')
+        if h['변경이력']:
+            b.append('<table class="t"><thead><tr><th style="width:92px">일자</th><th>변경 내용</th><th style="width:34%">사유</th></tr></thead>'
+                     + ''.join(f'<tr><td class="c">{esc(r["날짜"])}</td><td>{esc(eum(r["변경"]))}</td><td>{esc(eum(r["사유"])) if r["사유"] and r["사유"] != "-" else nil("-")}</td></tr>' for r in h['변경이력'])
+                     + '</table>')
+        else:
+            b.append(f'<p class="b2">○ {nil("기록 없음")}</p>')
+        b.append('</div>')
         if h.get('표준팀'):
             t = h['표준팀']
-            cos = '<br>'.join(f'{esc(c["폴더"])}: 원본 {"있음" if c["원본"] else "없음"} · 대응표 {"있음" if c["대응표"] else "없음"} · 기본 6종 {c["기본6종"]}개 · CP1 {esc(c["CP1"])}' for c in t['회사']) or '<span class="no">자사 회사 폴더 없음</span>'
-            rows.append(('표준 인력계획 팀 자사화', f'정리 Agent {"<span class=ok>있음</span>" if t["정리_Agent"] else "<span class=no>없음</span>"} · 정리 스킬 {"<span class=ok>있음</span>" if t["정리_스킬"] else "<span class=no>없음</span>"}<br>{cos}'))
-        if sh.get('다음'):
-            rows.append(('다음에 할 일', esc(sh['다음'])))
-        body.append(f'<div class="h"><h2>{esc(h["이름"])}</h2><div class="g">폴더 {esc(h["폴더"])}' + (f' · 목표: {esc(h["목표"])}' if h['목표'] else '') + '</div><table>'
-                    + ''.join(f'<tr><th>{k}</th><td>{v}</td></tr>' for k, v in rows) + '</table></div>')
-    if S.get('다음에 할 일'):
-        body.append('<div class="h"><h2>다음에 할 일</h2>' + '<br>'.join(esc(x) for x in S['다음에 할 일']) + '</div>')
-    body.append(f'<div class="foot">만든 도구: pwc-hr-harness onepage.py · 구성 · 규칙 · 변경 이력 · 결과 파일 수는 폴더에서 자동으로 읽은 값 · 주제 · 요약 문장은 그 값 안에서 작성 · 하네스 사본: {esc(os.path.basename(zp))}</div></div>')
-    open(hp, 'w', encoding='utf-8').write(f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>한 장 정리 · {esc(nm)}</title><style>{CSS}</style></head><body>' + ''.join(body) + '</body></html>')
+            b.append('<div class="blk"><p class="b1">□ 표준 인력계획 팀 자사화</p>'
+                     f'<p class="b2">○ 정리 Agent {"있음" if t["정리_Agent"] else "없음"} · 정리 스킬 {"있음" if t["정리_스킬"] else "없음"}</p>')
+            if t['회사']:
+                b.append('<table class="t"><thead><tr><th>회사 폴더</th><th>원본</th><th>대응표</th><th>기본 6종</th><th>CP1</th></tr></thead>'
+                         + ''.join(f'<tr><td>{esc(c["폴더"])}</td><td class="c">{"있음" if c["원본"] else "없음"}</td><td class="c">{"있음" if c["대응표"] else "없음"}</td>'
+                                   f'<td class="c">{c["기본6종"]}개</td><td class="c">{esc(c["CP1"])}</td></tr>' for c in t['회사']) + '</table>')
+            else:
+                b.append(f'<p class="b2">○ {nil("자사 회사 폴더 없음")}</p>')
+            b.append('</div>')
+        body += b
+    nxt = [(f'{h["이름"]} : ' if len(H) > 1 else '') + (S.get('하네스') or {}).get(h['폴더'], {}).get('다음', '') for h in H]
+    nxt = [x for x in nxt if x and not x.endswith(' : ')] + list(S.get('다음에 할 일') or [])
+    if nxt:
+        body.append(h2('향후 계획') + ''.join(f'<p class="b2">○ {esc(eum(x))}' + ('<span class="end">끝.</span>' if k == len(nxt) - 1 else '') + '</p>' for k, x in enumerate(nxt)))
+    else:
+        body.append('<p class="b2" style="text-align:right"><span class="end">끝.</span></p>')
+    body.append('<div class="foot">※ 구성 · 규칙 · 개선 이력 · 결과 파일 수는 폴더에서 자동으로 읽은 값임 · 자료 내용과 개인 정보는 담지 않음 (함께 저장한 zip 도 하네스 파일만 포함)</div></div>')
+    open(hp, 'w', encoding='utf-8').write(f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>하네스 구축 현황 리포트 · {esc(nm)}</title><style>{CSS}</style></head><body>' + ''.join(body) + '</body></html>')
     with zipfile.ZipFile(zp, 'w', zipfile.ZIP_DEFLATED) as z:
         for h in F['하네스']:   # 하네스 파일만: CLAUDE.md · README.md · .claude/ (settings.local 제외) · scripts/ · config*
             d = h['경로']
