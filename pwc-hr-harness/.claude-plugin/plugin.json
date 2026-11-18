@@ -1,7 +1,7 @@
 {
   "name": "pwc-hr-harness",
   "description": "HR 전략적 인력계획(SWP) 하네스 플러그인 · Day 1 교안 방법론 · Skill 장을 법전으로 삼는 기본 인력계획 에이전트 팀(리드 + 단계 담당 4 + 검증 담당)과, 이를 자사 버전으로 키우는 HR 특화 메타하네스 스킬. 모든 산출물은 HTML 뷰어로 본다. 새 하네스를 만드는 범용 메타 스킬 harness · evolve 는 revfactory/harness v2.1.0 (Apache-2.0)을 그대로 옮김 (NOTICE.md).",
-  "version": "0.13.1",
+  "version": "0.13.3",
   "author": { "name": "PwC · AI Powered Workforce Planning 과정" },
   "license": "SEE LICENSE IN NOTICE.md (교육용 배포 · mySUNI AI Powered Workforce Planning 과정 참가자 · 무단 재배포 금지 · harness · evolve 스킬은 Apache-2.0)",
   "keywords": ["hr", "workforce-planning", "swp", "harness", "meta-skill", "agent-team", "인력계획", "하네스"]

@@ -12,7 +12,7 @@
 ## 바꾼 점 (Apache 2.0 4(b))
 
 1. 다른 스킬 이름 참조 `harness:evolve` → `pwc-hr-harness:evolve` (이 플러그인 안에서 부르도록)
-2. 두 SKILL.md 의 description 끝에 한 문장: 인력계획 기본 팀 (`wfp-lead`)이 깔린 폴더의 설치 · 자사 버전 · 점검 · 저장 요청은 `pwc-hr-harness` 스킬이 맡음 (같은 플러그인 안 호출 경계)
+2. 두 SKILL.md 의 description 끝에 호출 경계 문장: 인력계획 기본 팀 (`wfp-lead`)이 깔린 폴더의 설치 · 자사 버전 · 점검 · 저장 요청은 `pwc-hr-harness` 스킬이 맡음 · 인력계획 하네스 요청은 `pwc-hr-harness` 가 먼저 표준 수정 / 새로 구축을 묻고 새로 구축일 때 `harness` 가 맡음 (`harness` · 0.13.2)
 3. 줄바꿈을 LF 로 통일
 
 그 밖의 본문 · 참고 문서는 원문 그대로다.

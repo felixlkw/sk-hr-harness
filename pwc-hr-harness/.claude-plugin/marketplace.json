@@ -8,7 +8,7 @@
       "name": "pwc-hr-harness",
       "source": "./",
       "description": "HR 인력계획 기본 에이전트 팀 + 자사 버전 메타하네스 스킬 + HTML 뷰어 + 새 하네스 만들기 (harness · evolve)",
-      "version": "0.13.1"
+      "version": "0.13.3"
     }
   ],
   "description": "PwC AI Powered Workforce Planning 과정 · HR 인력계획 하네스 플러그인 마켓플레이스"
